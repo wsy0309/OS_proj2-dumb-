@@ -205,11 +205,23 @@ void pAlarmHandler(int signo){
 
 void cAlarmHandler(int signo){
 	int mspid;	
-
+	
+	if((mspid = msgget((key_t)QUEUE_KEY, IPC_CREAT|0644)) == -1){
+                printf("msgget error \n");
+                exit(0);
+                }   
+	
 	printf("proc(%d) remain_cpu_time : %d\n",getpid(), remain_cpu_time);
 	remain_cpu_time--;
+	
 	if(remain_cpu_time == 0){
-		io_action();
+		//io_action();
+		memset(&msg, 0, sizeof(msg));
+        	msg.pid = getpid();
+        	msg.io_time = (rand() % 5) + 1;
+        	msg.cpu_time = (rand() % 10) + 1;
+       		 msg.msgType = 1;
+        	remain_cpu_time = msg.cpu_time;
 	}
 	else{
 		//여기서??가상 주소 메세지 보내기
@@ -221,11 +233,11 @@ void cAlarmHandler(int signo){
 		for(i=0; i<10; i++){
 			msg.vaddr[i] = rand();
 		}
-		if((msgsnd(mspid, &msg, (sizeof(msg) - sizeof(long)), IPC_NOWAIT)) == -1){
+	}
+	if((msgsnd(mspid, &msg, (sizeof(msg) - sizeof(long)), IPC_NOWAIT)) == -1){
                 printf("msgsnd error \n");
                 exit(0);
-        	}   
-	}
+        }
 	return;
 }
 /*********************************************
