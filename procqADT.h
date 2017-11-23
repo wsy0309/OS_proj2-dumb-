@@ -1,14 +1,20 @@
-#define FALSEE 0
+#define FALSE 0
 #define TRUE 1
 
 #include<stdio.h>
 #include<stdlib.h>
 
+typedef struct Page{
+	int valid;
+	unsigned int paddr;
+}Page;
+
+
 typedef struct L2Page{
 	int valid;
 	unsigned int baseAddr;
-	unsigned int* page;
-}L2page;
+	Page* page;
+}L2Page;
 
 typedef struct L1Page{
 	int valid;
