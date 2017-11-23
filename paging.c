@@ -138,14 +138,14 @@ int main(){
 						present = next;
 						printf("global_tick(%d) schedule proc(%d)\n",global_tick, present->pid);
 					}
-					else if(msg.msgType == 2){
-                                		int i;
-                                		unsigned int PA;
-                                		for(i=0; i<10; i++){
-                                        		PA = addrTranslator(runq->head->pcb->L1PT,msg.vaddr[i]);
-                                        		printf("VA :0x%08x -> PA :0x%08x",msg.vaddr[i], PA);
-                               			}
-					}
+				}
+				else if(msg.msgType == 2){
+                                	int i;
+                                	unsigned int PA;
+                                	for(i=0; i<10; i++){
+                                        	PA = addrTranslator(runq->head->pcb->L1PT,msg.vaddr[i]);
+                                        	printf("VA :0x%08x -> PA :0x%08x\n",msg.vaddr[i], PA);
+                               		}
 				}
 			}
 		}
