@@ -370,7 +370,7 @@ unsigned int addrTranslator(L1Page* L1PT, unsigned int VA){
 	
 	//PA 계산
 	PA = L1PT[L1Index].L2PT[L2Index].baseAddr|offset;
-	printf("VA :0x%08x -> PA :0x%08x",VA, PA);
+	//printf("VA :0x%08x -> PA :0x%08x",VA, PA);
 
 	return PA;
 	
