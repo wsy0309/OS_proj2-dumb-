@@ -1,41 +1,33 @@
 #define FALSE 0
 #define TRUE 1
-
 #include<stdio.h>
 #include<stdlib.h>
 
-typedef struct msgNode{
-    long msgType;
-    int pid;
-    int io_time;
-    int cpu_time;
-    unsigned int va[10];
-}msgNode;
-
 typedef struct Page{
-    int valid;
-    unsigned int pa;
+	int valid;
+	unsigned int paddr;
 }Page;
 
-typedef struct L2_page{
-    Page* page;
-    int valid;
-    int baseAddr;
-}L2_page;
 
-typedef struct L1_page{
-    L2_page *L2_PT;
-    int valid;
-    int baseAddr;
-}L1_page;
+typedef struct L2Page{
+	int valid;
+	unsigned int baseAddr;
+	Page* page;
+}L2Page;
+
+typedef struct L1Page{
+	int valid;
+	unsigned int baseAddr;
+	L2Page* L2PT;
+}L1Page;
 
 typedef struct Pcb{
 	int pid;
-//	int pros_state;
 	int remain_time_quantum;
 	int remain_io_time;
 	int remain_cpu_time;
-	L1_page * L1_PT;
+	
+	L1Page* L1PT;
 }Pcb;
 
 typedef struct ProcqNode{
@@ -125,9 +117,6 @@ void destroyProcq(Procq* p){
 	}
 	free(p);
 }
-
-
-
 
 
 
