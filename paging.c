@@ -53,7 +53,7 @@ void child_action(int cpu_time);
 void io_action();
 void searchShort();
 Pcb* scheduler();
-unsigned int addrTranslater(L1Page* L1PT, unsigned int VA);
+unsigned int addrTranslator(L1Page* L1PT, unsigned int VA);
 
 key_t msgpid;
 
@@ -122,22 +122,31 @@ int main(){
 		if(msgpid > 0){
 		//receive msg
 			if((msgrcv(msgpid, &msg, (sizeof(msg) - sizeof(long)), 0, 0)) > 0){
-				for(i = 0; i<10; i++){
-					if(pcbs[i]->pid == msg.pid){
-						pcbs[i]->remain_io_time = msg.io_time;
-						pcbs[i]->remain_cpu_time = msg.cpu_time;
-						pcbs[i]->remain_time_quantum = 2;
-						RemoveProcq(runq, pcbs[i]);
-						AddProcq(waitq, pcbs[i]);
-						printf("global_tick (%d) proc(%d) sleep (%d) ticks\n", global_tick, pcbs[i]->pid, pcbs[i]->remain_io_time);
+				if (msg.msgType == 1){
+					for(i = 0; i<10; i++){
+						if(pcbs[i]->pid == msg.pid){
+							pcbs[i]->remain_io_time = msg.io_time;
+							pcbs[i]->remain_cpu_time = msg.cpu_time;
+							pcbs[i]->remain_time_quantum = 2;
+							RemoveProcq(runq, pcbs[i]);
+							AddProcq(waitq, pcbs[i]);
+							printf("global_tick (%d) proc(%d) sleep (%d) ticks\n", global_tick, pcbs[i]->pid, pcbs[i]->remain_io_time);
+						}
+					}
+					next = scheduler();
+					if(next != NULL){
+						present = next;
+						printf("global_tick(%d) schedule proc(%d)\n",global_tick, present->pid);
+					}
+					else if(msg.msgType == 2){
+                                		int i;
+                                		unsigned int PA;
+                                		for(i=0; i<10; i++){
+                                        		PA = addrTranslator(runq->head->pcb->L1PT,msg.vaddr[i]);
+                                        		printf("VA :0x%08x -> PA :0x%08x",msg.vaddr[i], PA);
+                               			}
 					}
 				}
-				next = scheduler();
-				if(next != NULL){
-					present = next;
-					printf("global_tick(%d) schedule proc(%d)\n",global_tick, present->pid);
-				}
-				
 			}
 		}
 	}
@@ -195,6 +204,8 @@ void pAlarmHandler(int signo){
 *************************************************/
 
 void cAlarmHandler(int signo){
+	int mspid;	
+
 	printf("proc(%d) remain_cpu_time : %d\n",getpid(), remain_cpu_time);
 	remain_cpu_time--;
 	if(remain_cpu_time == 0){
@@ -202,8 +213,19 @@ void cAlarmHandler(int signo){
 	}
 	else{
 		//여기서??가상 주소 메세지 보내기
+		msg.pid= getpid();
+		msg.io_time = 0;
+		msg.msgType = 2;
+		
+		int i;	
+		for(i=0; i<10; i++){
+			msg.vaddr[i] = rand();
+		}
+		if((msgsnd(mspid, &msg, (sizeof(msg) - sizeof(long)), IPC_NOWAIT)) == -1){
+                printf("msgsnd error \n");
+                exit(0);
+        	}   
 	}
-	
 	return;
 }
 /*********************************************
@@ -295,7 +317,7 @@ void PrintQueue(Procq* q){
 	printf("\n");
 }
 
-unsigned int addrTranslater(L1Page* L1PT, unsigned int VA){
+unsigned int addrTranslator(L1Page* L1PT, unsigned int VA){
 	
 	unsigned int L1Index = VA >> 22;
 	unsigned int L2Index = (VA & 0x003ff000) >> 12;
@@ -307,7 +329,7 @@ unsigned int addrTranslater(L1Page* L1PT, unsigned int VA){
 	//해당 프로세스의 L1PageTable이 없다면
 	if (L1PT == NULL){
 		pfn = free_min;
-		L1PT = (L1Page*)malloc((sizeof(L1Page)*1024);
+		L1PT = (L1Page*)malloc((sizeof(L1Page)*1024));
 		memset(L1PT, 0, sizeof(L1Page)*1024);
 		free_min++;
 	} 
@@ -315,7 +337,7 @@ unsigned int addrTranslater(L1Page* L1PT, unsigned int VA){
 	//해당 L1PTE에 mapping이 없다면
 	if (L1PT[L1Index].valid == 0){
 		pfn = free_min;
-		L1PT[L1Index].L2PT = (L2Page*)malloc((sizeof(L2Page)*1024);
+		L1PT[L1Index].L2PT = (L2Page*)malloc((sizeof(L2Page)*1024));
 		memset(L1PT[L1Index].L2PT, 0, sizeof(L2Page)*1024);
 		
 		L1PT[L1Index].baseAddr = (0x1000)*pfn;
@@ -326,7 +348,7 @@ unsigned int addrTranslater(L1Page* L1PT, unsigned int VA){
 	//해당 L2PTE에 mapping이 없다면
 	if (L1PT[L1Index].L2PT[L2Index].valid == 0){
 		pfn = free_min;
-		L1PT[L1Index].L2PT[L2Index].page = (unsigned int*)malloc((sizeof(unsigned int)*1024);
+		L1PT[L1Index].L2PT[L2Index].page = (unsigned int*)malloc((sizeof(unsigned int)*1024));
 		memset(L1PT[L1Index].L2PT[L2Index].page, 0, sizeof(unsigned int)*1024);
 
 		L1PT[L1Index].L2PT[L2Index].baseAddr = (0x1000)*pfn;
