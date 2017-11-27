@@ -3,6 +3,22 @@
 #include<stdio.h>
 #include<stdlib.h>
 
+typedef struct msgNode{
+	long msgType;
+	int pid;
+	int io_time;
+	int cpu_time;
+	unsigned int vaddr[10];
+}msgNode;
+
+
+typedef struct tlb_t {
+    unsigned int valid; //value존재 유무(1, 0)
+    unsigned int dirty; //tlb update 유무(1, 0)
+    unsigned int L1Index;
+	unsigned int pfn;
+}tlb_t;
+
 typedef struct Page{
 	int valid;
 	unsigned int paddr;
@@ -28,6 +44,7 @@ typedef struct Pcb{
 	int remain_cpu_time;
 	
 	L1Page* L1PT;
+	tlb_t* tlb;
 }Pcb;
 
 typedef struct ProcqNode{
